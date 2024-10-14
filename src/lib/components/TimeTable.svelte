@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { components, removeTime, sortPreset } from '$lib/common';
+	import { components, removeItemFromDict, sortPreset } from '$lib/common';
 	import { preset } from '$lib/store';
 	import type { SceneStudioSchema } from '$lib/types';
 	import { Flexilte } from '@flexilte/core';
@@ -23,7 +23,7 @@
 		modalStore.trigger(timeModal);
 	};
 
-	const handleNew = () => {
+	const handleNewTime = () => {
 		const timeModal: ModalSettings = {
 			type: 'component',
 			component: 'timeModal'
@@ -31,9 +31,18 @@
 		modalStore.trigger(timeModal);
 	};
 
+	const handleNewService = (time: string) => {
+		const timeModal: ModalSettings = {
+			type: 'component',
+			component: 'serviceModal',
+			meta: { time }
+		};
+		modalStore.trigger(timeModal);
+	};
+
 	function handleRemove(time: string) {
 		preset.update((p) => {
-			return removeTime(time, p);
+			return removeItemFromDict(time, p);
 		});
 	}
 </script>
@@ -45,7 +54,7 @@
 			{#each Object.keys(sortedTable) as time, i}
 				<tr>
 					<td
-						class="border-r border-gray-600 pr-4 cursor-pointer"
+						class="border-r border-gray-600 pr-4 cursor-pointer table-cell-fit"
 						on:click={() => handleEdit(time)}
 					>
 						<div class="text-center">
@@ -56,7 +65,10 @@
 						<div class="flex gap-4 flex-col">
 							<ServiceTable services={$preset[time]} {time}></ServiceTable>
 							<div class="flex flex-row gap-2">
-								<button type="button" class="btn-icon variant-filled-primary"
+								<button
+									type="button"
+									class="btn-icon variant-filled-primary"
+									on:click={() => handleNewService(time)}
 									><Icon icon="ic:baseline-plus"></Icon></button
 								>
 								<button
@@ -71,7 +83,7 @@
 				</tr>
 			{/each}
 			<div class="m-4">
-				<button type="button" class="btn-icon variant-filled-primary" on:click={handleNew}
+				<button type="button" class="btn-icon variant-filled-primary" on:click={handleNewTime}
 					><Icon icon="ic:baseline-plus"></Icon></button
 				>
 			</div>

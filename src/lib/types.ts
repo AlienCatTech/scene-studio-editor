@@ -1,26 +1,26 @@
 export interface Data {
-    [key: string]: any;
+	[key: string]: any;
 }
 
 export interface Target {
-    entity_id?: string;
-    device_id?: string;
+	entity_id?: string;
+	device_id?: string;
 }
 
 export interface NestedObject {
-    data: Data;
-    target?: Target;
+	data: Data;
+	target?: Target;
 }
 
 export interface TimePattern {
-    [key: string]: NestedObject;
+	[key: string]: NestedObject;
 }
 
 export interface SceneStudioSchema {
-    [key: string]: TimePattern;
+	[key: string]: TimePattern;
 }
 
 export type LoginStore = {
-    url: string
-    token: string
-}
+	url: string;
+	token: string;
+};

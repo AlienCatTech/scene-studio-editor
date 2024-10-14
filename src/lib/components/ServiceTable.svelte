@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { components, removeTime } from '$lib/common';
+	import { components, removeItemFromDict } from '$lib/common';
 	import { preset } from '$lib/store';
 	import type { SceneStudioSchema, Target, TimePattern } from '$lib/types';
 	import { Flexilte } from '@flexilte/core';
@@ -14,26 +14,19 @@
 	export let services: TimePattern;
 	export let time: string;
 
-	const handleEdit = (time: string) => {
-		const timeModal: ModalSettings = {
+	const handleEdit = (time: string, s: string) => {
+		const serviceModal: ModalSettings = {
 			type: 'component',
-			component: 'timeModal',
-			meta: time
+			component: 'serviceModal',
+			meta: { time, service: s }
 		};
-		modalStore.trigger(timeModal);
+		modalStore.trigger(serviceModal);
 	};
 
-	const handleNew = () => {
-		const timeModal: ModalSettings = {
-			type: 'component',
-			component: 'timeModal'
-		};
-		modalStore.trigger(timeModal);
-	};
-
-	function handleRemove(time: string) {
+	function handleRemove(time: string, s: string) {
 		preset.update((p) => {
-			return removeTime(time, p);
+			p[time] = removeItemFromDict(s, p[time]);
+			return p;
 		});
 	}
 </script>
@@ -44,20 +37,25 @@
 		<tbody>
 			{#each Object.keys(services) as s, i}
 				<tr>
-					<td class="border-r border-gray-600 pr-4">{s}</td>
+					<td class="border-r border-gray-600 pr-4 table-cell-fit">{s}</td>
 					<td>
-						{JSON.stringify(services[s].data, null, 2)}
+						{services[s].data ? JSON.stringify(services[s].data, null, 2) : ''}
 					</td>
-					<td>
+					<td class="table-cell-fit">
 						<TargetTable targets={services[s].target}></TargetTable>
 					</td>
-					<td>
-						<div class="flex flex-row gap-2">
-							<button type="button" class="btn-icon variant-filled-tertiary" on:click ={() => handleEdit(time)}
-								><Icon icon="ic:baseline-edit"></Icon></button
+					<td class="table-cell-fit">
+						<div class="flex flex-row gap-2 justify-end">
+							<button
+								type="button"
+								class="btn-icon variant-filled-tertiary"
+								on:click={() => handleEdit(time, s)}><Icon icon="ic:baseline-edit"></Icon></button
 							>
 
-							<button type="button" class="btn-icon variant-filled-error"on:click ={() => handleRemove(time)}
+							<button
+								type="button"
+								class="btn-icon variant-filled-error"
+								on:click={() => handleRemove(time, s)}
 								><Icon icon="ic:baseline-delete"></Icon></button
 							>
 						</div>

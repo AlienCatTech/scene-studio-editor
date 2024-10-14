@@ -6,11 +6,11 @@
 	import type { ToastSettings } from '@skeletonlabs/skeleton';
 	import { preset } from '$lib/store';
 	import {
-		addToTime,
-		changeTime,
+		addToDict,
+		changeItemInDict,
 		numToString,
 		parseTimeString,
-		removeTime,
+		removeItemFromDict,
 		validTime
 	} from '$lib/common';
 	import Alarm from './Alarm.svelte';
@@ -30,7 +30,7 @@
 	const toastStore = getToastStore();
 	let visible = false;
 	let errMsg = '';
-	let meta = "";
+	let meta = '';
 	onMount(() => {
 		if (!$modalStore) {
 			return;
@@ -53,13 +53,18 @@
 			visible = true;
 			return;
 		}
+		const timeStr = numToString(formData.hour, formData.min, formData.sec);
+		if (!meta && timeStr in $modalStore) {
+			errMsg = 'Time already exist';
+			visible = true;
+			return;
+		}
 
 		preset.update((p) => {
-			const timeStr = numToString(formData.hour, formData.min, formData.sec);
 			if (meta) {
-				return changeTime(meta, timeStr, p);
+				return changeItemInDict(meta, timeStr, p);
 			}
-			return addToTime(timeStr, p);
+			return addToDict(timeStr, p);
 		});
 		modalStore.close();
 	}
@@ -74,7 +79,7 @@
 
 {#if $modalStore[0]}
 	<div class="modal-example-form {cBase}">
-		<header class={cHeader}>Add A Time</header>
+		<header class={cHeader}>{meta ? 'Change Time' : 'Add A Time'}</header>
 		<article>Add a time in order to schedule events.</article>
 		<!-- Enable for debugging: -->
 		<form class="modal-form {cForm}">

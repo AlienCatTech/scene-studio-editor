@@ -4,61 +4,125 @@
 	// Stores
 	import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
 	import type { ToastSettings } from '@skeletonlabs/skeleton';
-	import { preset } from '$lib/store';
+	import { loginStore, preset } from '$lib/store';
 	import {
-		addToTime,
-		changeTime,
+		addToDict,
+		changeItemInDict,
 		numToString,
 		parseTimeString,
-		removeTime,
+		removeItemFromDict,
 		validTime
 	} from '$lib/common';
-
+	import { listEntities, listServices } from '$lib/ha';
+	import { Autocomplete } from '@skeletonlabs/skeleton';
+	import type { AutocompleteOption, PopupSettings } from '@skeletonlabs/skeleton';
 	// Props
 	/** Exposes parent props to this component. */
 	export let parent: SvelteComponent;
-
+	import { popup } from '@skeletonlabs/skeleton';
+	import Page from '../../routes/+page.svelte';
 	const modalStore = getModalStore();
 
 	// Form Data
 	const formData = {
-		hour: 0,
-		min: 0,
-		sec: 0
+		service: '',
+		data: {},
+		target: { entity_id: '' }
 	};
 	const toastStore = getToastStore();
 	let visible = false;
 	let errMsg = '';
-	let meta = "";
-	onMount(() => {
-		if (!$modalStore) {
-			return;
+	let meta: {
+		service?: string;
+		time?: string;
+	} = {};
+
+	let serviceInput = '';
+	let dataInput = '';
+	let entityInput = '';
+
+	let services: AutocompleteOption[] = [];
+	let entities: AutocompleteOption[] = [];
+
+	onMount(async () => {
+		if ($modalStore && $modalStore[0] && $modalStore[0].meta) {
+			meta = $modalStore[0].meta;
+			if (meta.service) {
+				serviceInput = meta.service;
+				dataInput = JSON.stringify($preset[meta.time!][serviceInput].data);
+				entityInput = $preset[meta.time!][serviceInput].target?.entity_id || '';
+			}
 		}
-		const cur = $modalStore[0];
-		if (cur && cur.meta) {
-			const [h, m, s] = parseTimeString(cur.meta);
-			formData.hour = h;
-			formData.min = m;
-			formData.sec = s;
-			meta = cur.meta;
+
+		if ($loginStore) {
+			const serviceRes = await listServices();
+			services = serviceRes
+				.map((domain) => {
+					return Object.keys(domain.services).map((s) => {
+						return { value: `${domain.domain}.${s}`, label: `${domain.domain}.${s}` };
+					});
+				})
+				.flat();
+			const entityRes = await listEntities();
+			entities = entityRes.map((e: { entity_id: string }) => ({
+				value: e.entity_id,
+				label: e.entity_id
+			}));
 		}
 	});
-
+	let servicePopupSettings: PopupSettings = {
+		event: 'click',
+		target: 'serviceAutocomplete',
+		placement: 'bottom'
+	};
+	let entityPopupSettings: PopupSettings = {
+		event: 'click',
+		target: 'entityAutocomplete',
+		placement: 'bottom'
+	};
+	const onServiceSelect = (x) => {
+		serviceInput = x.detail.value;
+		formData.service = x.detail.value;
+	};
+	const onEntitySelect = (x) => {
+		entityInput = x.detail.value;
+		formData.target.entity_id = x.detail.value;
+	};
 	// We've created a custom submit function to pass the response and close the modal.
 	function onFormSubmit(): void {
 		// Input validation
-		if (!validTime(formData.hour, formData.min, formData.sec)) {
-			errMsg = 'Input not valid';
+		if (!formData.service) {
+			errMsg = 'Invalid Input';
+			visible = true;
+			return;
+		}
+		try {
+			if (dataInput) {
+				JSON.parse(dataInput);
+			}
+		} catch (e) {
+			errMsg = 'Invalid Input' + e;
+			visible = true;
+			return;
+		}
+
+		if (!meta.service && formData.service in $preset[meta.time!]) {
+			errMsg = 'Service already exist';
 			visible = true;
 			return;
 		}
 
 		preset.update((p) => {
-			const timeStr = numToString(formData.hour, formData.min, formData.sec);
-			if (meta) {
-				return changeTime(meta, timeStr, p);
-			}
-			return addToTime(timeStr, p);
+			p[meta.time!] = {
+				...p[meta.time!],
+				...{
+					[formData.service]: {
+						data: dataInput ? JSON.parse(dataInput) : undefined,
+						target: formData.target
+					}
+				}
+			};
+			return p;
 		});
 		modalStore.close();
 	}
@@ -73,37 +137,66 @@
 
 {#if $modalStore[0]}
 	<div class="modal-example-form {cBase}">
-		<header class={cHeader}>Add A Time</header>
-		<article>Add a time in order to schedule events.</article>
+		<header class={cHeader}>
+			{meta.service ? 'Change Service' : 'Add A Service'}
+		</header>
+		<article>Add a service to a scene.</article>
 		<!-- Enable for debugging: -->
 		<form class="modal-form {cForm}">
 			<label class="label">
-				<span>At Time...</span>
-				<div class="flex gap-4">
-					<input
-						class="input"
-						type="number"
-						bind:value={formData.hour}
-						placeholder="Hour"
-						max="99"
-						min="0"
+				<span>Service</span>
+				<input
+					class="input autocomplete"
+					type="search"
+					name="autocomplete-search-service"
+					bind:value={serviceInput}
+					placeholder="Search..."
+					use:popup={servicePopupSettings}
+				/>
+				<div
+					data-popup="serviceAutocomplete"
+					class="card w-full max-w-sm max-h-48 p-4 overflow-y-auto"
+					tabindex="-1"
+				>
+					<Autocomplete
+						bind:input={serviceInput}
+						options={services}
+						on:selection={onServiceSelect}
 					/>
-					<input
-						class="input"
-						type="number"
-						bind:value={formData.min}
-						placeholder="Minute"
-						max="59"
-						min="0"
-					/>
-					<input
-						class="input"
-						type="number"
-						bind:value={formData.sec}
-						placeholder="Second"
-						max="59"
-						min="0"
-					/>
+				</div>
+			</label>
+			<label class="label">
+				<span>Data</span>
+				<input
+					class="input"
+					type="text"
+					bind:value={dataInput}
+					placeholder={JSON.stringify({ value: 123 })}
+				/>
+				<span class="text-gray-400"
+					>You can also use <a
+						class="underline"
+						href="https://www.home-assistant.io/docs/configuration/templating/">template</a
+					>
+					here. Example: {JSON.stringify({ value: "{{states('sensor.sun_next_noon')}}" })}</span
+				>
+			</label>
+			<label class="label">
+				<span>Entity</span>
+				<input
+					class="input autocomplete"
+					type="search"
+					name="autocomplete-search-entity"
+					bind:value={entityInput}
+					placeholder="Search..."
+					use:popup={entityPopupSettings}
+				/>
+				<div
+					data-popup="entityAutocomplete"
+					class="card w-full max-w-sm max-h-48 p-4 overflow-y-auto"
+					tabindex="-1"
+				>
+					<Autocomplete bind:input={entityInput} options={entities} on:selection={onEntitySelect} />
 				</div>
 			</label>
 		</form>
