@@ -1,10 +1,5 @@
 <script lang="ts">
-	import { components } from '$lib/common';
-	import { preset } from '$lib/store';
-	import type { SceneStudioSchema, Target, TimePattern } from '$lib/types';
-	import { Flexilte } from '@flexilte/core';
-	import type { LayoutConfig } from '@flexilte/core';
-	import ServiceTable from './ServiceTable.svelte';
+	import type { Target } from '$lib/types';
 
 	export let targets: Target | undefined;
 </script>

@@ -1,9 +1,6 @@
 <script lang="ts">
-	import { components, removeItemFromDict, sortPreset } from '$lib/common';
+	import { removeItemFromDict, sortPreset } from '$lib/common';
 	import { preset } from '$lib/store';
-	import type { SceneStudioSchema } from '$lib/types';
-	import { Flexilte } from '@flexilte/core';
-	import type { LayoutConfig } from '@flexilte/core';
 	import ServiceTable from './ServiceTable.svelte';
 	import Icon from '@iconify/svelte';
 

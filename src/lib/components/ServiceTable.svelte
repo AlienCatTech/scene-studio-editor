@@ -1,10 +1,7 @@
 <script lang="ts">
-	import { components, removeItemFromDict } from '$lib/common';
+	import { removeItemFromDict } from '$lib/common';
 	import { preset } from '$lib/store';
-	import type { SceneStudioSchema, Target, TimePattern } from '$lib/types';
-	import { Flexilte } from '@flexilte/core';
-	import type { LayoutConfig } from '@flexilte/core';
-	import ServiceTable from './ServiceTable.svelte';
+	import type { TimePattern } from '$lib/types';
 	import TargetTable from './TargetTable.svelte';
 	import Icon from '@iconify/svelte';
 	import { getModalStore } from '@skeletonlabs/skeleton';

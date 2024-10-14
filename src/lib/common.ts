@@ -93,3 +93,6 @@ export const setLogin = (login: LoginStore) => {
 	localStorage.setItem('login', JSON.stringify(login));
 	loginStore.set(login);
 };
+
+export const getFullFileName = (name: string) => name + '.json';
+export const getOnlyFileName = (name: string) => name.substring(0, name.length - 5);

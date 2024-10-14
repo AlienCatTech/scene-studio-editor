@@ -3,14 +3,12 @@
 
 	// Stores
 	import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
-	import type { ToastSettings } from '@skeletonlabs/skeleton';
 	import { preset } from '$lib/store';
 	import {
 		addToDict,
 		changeItemInDict,
 		numToString,
 		parseTimeString,
-		removeItemFromDict,
 		validTime
 	} from '$lib/common';
 	import Alarm from './Alarm.svelte';

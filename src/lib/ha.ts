@@ -12,7 +12,11 @@ const callHA = async (path: string) => {
 				'Content-Type': 'application/json'
 			}
 		});
-		return await r.json();
+		if (r.status === 200) {
+			return await r.json();
+		} else {
+			return Promise.reject(await r.text());
+		}
 	}
 	return Promise.reject('No url or token setup');
 };
@@ -26,24 +30,27 @@ export const listEntities = () => {
 };
 
 export const getMedia = (media: string) => {
-	return callHA('/media/media/' + media);
+	return callHA('/api/huffbox/download/' + media);
 };
 
 export const uploadMedia = async (file: File) => {
 	const login = get(loginStore);
 	if (login) {
 		const formData = new FormData();
-		formData.append('media_content_id', 'media-source://media_source/media/.');
 		formData.append('file', file);
 
-		const r = await fetch(login.url + '/api/media_source/local_source/upload', {
+		const r = await fetch(login.url + '/api/huffbox/upload', {
 			method: 'POST',
 			headers: {
 				Authorization: `Bearer ${login.token}`
 			},
 			body: formData
 		});
-		return await r.json();
+		if (r.status === 200) {
+			return await r.json();
+		} else {
+			return Promise.reject(await r.text());
+		}
 	}
 	return Promise.reject('No url or token setup');
 };

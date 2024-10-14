@@ -42,7 +42,7 @@
 </script>
 
 <Modal components={modalRegistry} />
-<Toast position="tr" zIndex="99999999" />
+<Toast position="tr" />
 <!-- App Shell -->
 <AppShell>
 	<svelte:fragment slot="header">

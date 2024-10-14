@@ -1,13 +1,15 @@
 <script lang="ts">
+	import { getFullFileName, getOnlyFileName } from '$lib/common';
 	import TimeTable from '$lib/components/TimeTable.svelte';
+	import { getMedia, uploadMedia } from '$lib/ha';
 	import { loginStore, preset } from '$lib/store';
 
-	import { getModalStore } from '@skeletonlabs/skeleton';
-	import type { ModalSettings } from '@skeletonlabs/skeleton';
+	import { getModalStore, getToastStore, FileButton } from '@skeletonlabs/skeleton';
+	import type { ModalSettings, ToastSettings } from '@skeletonlabs/skeleton';
 	import { onMount } from 'svelte';
 
 	const modalStore = getModalStore();
-
+	const toastStore = getToastStore();
 	const loginModal: ModalSettings = {
 		type: 'component',
 		component: 'loginModal'
@@ -17,51 +19,139 @@
 		modalStore.trigger(loginModal);
 	};
 
-	onMount(() => {
-		preset.set({
-			'00:00:00': {
-				'text.set': {
-					data: {
-						value:
-							'asdasddq3d qeq223 23jh 234jhb 234bjh 234bjh23jhb423jh4234jh jh 34jh 234jh basdasddq3d qeq223 23jh 234jhb 234bjh 234bjh23jhb423jh4234jh jh 34jh 234jh basdasddq3d qeq223 23jh 234jhb 234bjh 234bjh23jhb423jh4234jh jh 34jh 234jh basdasddq3d qeq223 23jh 234jhb 234bjh 234bjh23jhb423jh4234jh jh 34jh 234jh b'
-					},
-					target: {
-						entity_id: 'test'
-					}
-				},
-				'time.set': {
-					data: {
-						value: 123
-					}
-				}
-			},
-			'00:00:01': {
-				'text.set': {
-					data: {
-						value: 123
-					},
-					target: {
-						entity_id: 'test',
+	let fileName = '';
+	let fileInput: FileList;
 
-						device_id: 'test'
-					}
+	const toastMsg = (message: string, isErr: boolean = false) => {
+		const t: ToastSettings = isErr
+			? {
+					message,
+					background: 'variant-filled-error'
 				}
+			: {
+					message
+				};
+
+		toastStore.trigger(t);
+	};
+
+	const handleLoad = async () => {
+		try {
+			const media = await getMedia(getFullFileName(fileName));
+			preset.set(media);
+			localStorage.setItem('preset', media);
+			localStorage.setItem('fileName', fileName);
+		} catch (e) {
+			toastMsg('Failed to load: ' + e, true);
+		}
+	};
+
+	const handleSave = async () => {
+		try {
+			if (!fileName) {
+				toastMsg('Give file a name!');
+				return;
 			}
-		});
+
+			const blob = new Blob([JSON.stringify($preset)], { type: 'application/json' });
+			const file = new File([blob], getFullFileName(fileName), { type: 'application/json' });
+
+			await uploadMedia(file);
+			toastMsg('Successfully saved to your media');
+		} catch (e) {
+			toastMsg('Failed to save: ' + e, true);
+		}
+	};
+
+	const handleImport = async (e) => {
+		const file = e.target.files[0];
+		if (!file) {
+			return;
+		}
+		const reader = new FileReader();
+		reader.onload = (e) => {
+			try {
+				if (e.target && e.target.result) {
+					preset.set(JSON.parse(e.target.result as string));
+					const name = getOnlyFileName(file.name);
+					localStorage.setItem('preset', e.target.result as string);
+					localStorage.setItem('fileName', name);
+					fileName = name;
+				}
+			} catch (e) {
+				toastMsg('Failed to import: ' + e, true);
+			}
+		};
+
+		reader.readAsText(file);
+	};
+
+	const handleExport = async () => {
+		if (!fileName) {
+			toastMsg('Give file a name!');
+			return;
+		}
+		const blob = new Blob([JSON.stringify($preset)], { type: 'application/json' });
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement('a');
+		link.href = url;
+		link.download = getFullFileName(fileName);
+
+		document.body.appendChild(link);
+		link.click();
+
+		document.body.removeChild(link);
+		URL.revokeObjectURL(url);
+	};
+
+	onMount(() => {
+		if (localStorage.getItem('preset')) preset.set(JSON.parse(localStorage.getItem('preset')!));
+		if (localStorage.getItem('fileName')) fileName = localStorage.getItem('fileName')!;
 	});
 </script>
 
 <div class="flex flex-col gap-4 mt-4 container container h-full mx-auto">
-	<div class="flex justify-end">
-		{#if $loginStore}
-			<button type="button" class="btn variant-filled-success w-fit" on:click={handleLogin}
-				>Logged in to HuffOS</button
+	<div class="md:flex justify-between items-center">
+		<div class="w-fit">
+			<label class="flex">
+				<span class=" flex items-center w-full">File Name</span>
+				<input class="input" type="text" bind:value={fileName} placeholder="myScene" />
+			</label>
+		</div>
+		<div class="md:flex gap-2">
+			{#if $loginStore}
+				<button type="button" class="btn variant-filled-success w-fit" on:click={handleLogin}>
+					Logged in to HuffOS
+				</button>
+				<button type="button" class="btn variant-ghost-primary w-fit" on:click={handleLoad}>
+					Load
+				</button>
+				<button type="button" class="btn variant-ghost-secondary w-fit" on:click={handleSave}>
+					Save
+				</button>
+			{:else}
+				<button type="button" class="btn variant-filled w-fit" on:click={handleLogin}>
+					Login to HuffOS
+				</button>
+			{/if}
+			<button
+				type="button"
+				class="btn variant-filled-warning w-fit"
+				on:click={() => preset.set({})}
 			>
-		{:else}
-			<button type="button" class="btn variant-filled w-fit" on:click={handleLogin}
-				>Login to HuffOS</button
-			>
-		{/if}
+				Clear
+			</button>
+			<FileButton
+				name="files"
+				accept="application/json"
+				button="btn variant-filled-primary"
+				bind:files={fileInput}
+				on:change={handleImport}
+			/>
+			<button type="button" class="btn variant-filled-secondary w-fit" on:click={handleExport}>
+				Download
+			</button>
+		</div>
 	</div>
 	<div class="flex justify-center">
 		<TimeTable />

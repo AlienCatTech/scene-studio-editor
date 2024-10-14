@@ -1,10 +1,6 @@
 <script lang="ts">
-	import { components, setLogin } from '$lib/common';
-	import { preset, loginStore } from '$lib/store';
-	import type { SceneStudioSchema, Target, TimePattern } from '$lib/types';
-	import { Flexilte } from '@flexilte/core';
-	import type { LayoutConfig } from '@flexilte/core';
-	import ServiceTable from './ServiceTable.svelte';
+	import { setLogin } from '$lib/common';
+	import { loginStore } from '$lib/store';
 	import { onMount, type SvelteComponent } from 'svelte';
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import { testConnection } from '$lib/ha';

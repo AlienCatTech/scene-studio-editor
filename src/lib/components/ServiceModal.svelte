@@ -2,17 +2,8 @@
 	import { onMount, type SvelteComponent } from 'svelte';
 
 	// Stores
-	import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
-	import type { ToastSettings } from '@skeletonlabs/skeleton';
+	import { getModalStore } from '@skeletonlabs/skeleton';
 	import { loginStore, preset } from '$lib/store';
-	import {
-		addToDict,
-		changeItemInDict,
-		numToString,
-		parseTimeString,
-		removeItemFromDict,
-		validTime
-	} from '$lib/common';
 	import { listEntities, listServices } from '$lib/ha';
 	import { Autocomplete } from '@skeletonlabs/skeleton';
 	import type { AutocompleteOption, PopupSettings } from '@skeletonlabs/skeleton';
@@ -20,7 +11,6 @@
 	/** Exposes parent props to this component. */
 	export let parent: SvelteComponent;
 	import { popup } from '@skeletonlabs/skeleton';
-	import Page from '../../routes/+page.svelte';
 	const modalStore = getModalStore();
 
 	// Form Data
@@ -29,7 +19,6 @@
 		data: {},
 		target: { entity_id: '' }
 	};
-	const toastStore = getToastStore();
 	let visible = false;
 	let errMsg = '';
 	let meta: {
@@ -41,8 +30,8 @@
 	let dataInput = '';
 	let entityInput = '';
 
-	let services: AutocompleteOption[] = [];
-	let entities: AutocompleteOption[] = [];
+	let services: AutocompleteOption<string>[] = [];
+	let entities: AutocompleteOption<string>[] = [];
 
 	onMount(async () => {
 		if ($modalStore && $modalStore[0] && $modalStore[0].meta) {
@@ -57,7 +46,7 @@
 		if ($loginStore) {
 			const serviceRes = await listServices();
 			services = serviceRes
-				.map((domain) => {
+				.map((domain: { services: {}; domain: any }) => {
 					return Object.keys(domain.services).map((s) => {
 						return { value: `${domain.domain}.${s}`, label: `${domain.domain}.${s}` };
 					});
@@ -80,11 +69,11 @@
 		target: 'entityAutocomplete',
 		placement: 'bottom'
 	};
-	const onServiceSelect = (x) => {
+	const onServiceSelect = (x: { detail: { value: string } }) => {
 		serviceInput = x.detail.value;
 		formData.service = x.detail.value;
 	};
-	const onEntitySelect = (x) => {
+	const onEntitySelect = (x: { detail: { value: string } }) => {
 		entityInput = x.detail.value;
 		formData.target.entity_id = x.detail.value;
 	};
@@ -126,7 +115,12 @@
 		});
 		modalStore.close();
 	}
-
+	function entityFilter(): AutocompleteOption<string>[] {
+		// Create a local copy of options
+		let _options = [...entities];
+		// Filter options
+		return _options.filter((x) => x.value.startsWith(formData.service.split('.')[0]));
+	}
 	// Base Classes
 	const cBase = 'card p-4 w-modal shadow-xl space-y-4';
 	const cHeader = 'text-2xl font-bold';
@@ -182,7 +176,7 @@
 				>
 			</label>
 			<label class="label">
-				<span>Entity</span>
+				<span>Target Entity</span>
 				<input
 					class="input autocomplete"
 					type="search"
@@ -196,7 +190,12 @@
 					class="card w-full max-w-sm max-h-48 p-4 overflow-y-auto"
 					tabindex="-1"
 				>
-					<Autocomplete bind:input={entityInput} options={entities} on:selection={onEntitySelect} />
+					<Autocomplete
+						bind:input={entityInput}
+						options={entities}
+						on:selection={onEntitySelect}
+						filter={entityFilter}
+					/>
 				</div>
 			</label>
 		</form>
