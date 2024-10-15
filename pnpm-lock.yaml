@@ -5,12 +5,6 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
-  '@flexilte/core':
-    specifier: ^1.2.0
-    version: 1.2.0(svelte@4.2.19)
-  '@flexilte/skeleton':
-    specifier: ^1.2.0
-    version: 1.2.0(@skeletonlabs/skeleton@2.10.2)(svelte@4.2.19)
   '@floating-ui/dom':
     specifier: 1.6.11
     version: 1.6.11
@@ -28,6 +22,9 @@ devDependencies:
   '@sveltejs/adapter-auto':
     specifier: ^3.0.0
     version: 3.2.5(@sveltejs/kit@2.7.0)
+  '@sveltejs/adapter-static':
+    specifier: ^3.0.5
+    version: 3.0.5(@sveltejs/kit@2.7.0)
   '@sveltejs/kit':
     specifier: ^2.0.0
     version: 2.7.0(@sveltejs/vite-plugin-svelte@3.1.2)(svelte@4.2.19)(vite@5.4.8)
@@ -353,25 +350,6 @@ packages:
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
     dev: true
 
-  /@flexilte/core@1.2.0(svelte@4.2.19):
-    resolution: {integrity: sha512-aq9qTRnLYHMQmhZrvuVJg2sgMIlWntJOhuOYWBID4mT3bpku4knkZ40tA82oY6wB/yuZrzTZb/FjwlQu0F9a8A==}
-    peerDependencies:
-      svelte: ^4.0.0
-    dependencies:
-      svelte: 4.2.19
-    dev: false
-
-  /@flexilte/skeleton@1.2.0(@skeletonlabs/skeleton@2.10.2)(svelte@4.2.19):
-    resolution: {integrity: sha512-IyZfeRxjxc1Rt57EkKJ/diEz1Emt4yOKftSi2/WyZwueshZdWmOJnhwXg0hlkojSJKHfFcCUGZjCaJ+5j8XyTQ==}
-    peerDependencies:
-      '@skeletonlabs/skeleton': ^2.10.0
-      svelte: ^4.0.0
-    dependencies:
-      '@skeletonlabs/skeleton': 2.10.2(svelte@4.2.19)
-      highlight.js: 11.9.0
-      svelte: 4.2.19
-    dev: false
-
   /@floating-ui/core@1.6.8:
     resolution: {integrity: sha512-7XJ9cPU+yI2QeLS+FCSlqNFZJq8arvswefkZrYI1yQBbftw6FyrZOxYSh+9S7z7TpeWlRt9zJ5IhM1WIL334jA==}
     dependencies:
@@ -628,6 +606,7 @@ packages:
     dependencies:
       esm-env: 1.0.0
       svelte: 4.2.19
+    dev: true
 
   /@skeletonlabs/tw-plugin@0.4.0(tailwindcss@3.4.13):
     resolution: {integrity: sha512-v6Y4deBq9ByRx3kTRGgekhhYkWEYgNNNu8UXOwJngCStB7w8SwmbNFSeHkluxMbgCgMnJyp220EMpw9nj/rEsQ==}
@@ -644,6 +623,14 @@ packages:
     dependencies:
       '@sveltejs/kit': 2.7.0(@sveltejs/vite-plugin-svelte@3.1.2)(svelte@4.2.19)(vite@5.4.8)
       import-meta-resolve: 4.1.0
+    dev: true
+
+  /@sveltejs/adapter-static@3.0.5(@sveltejs/kit@2.7.0):
+    resolution: {integrity: sha512-kFJR7RxeB6FBvrKZWAEzIALatgy11ISaaZbcPup8JdWUdrmmfUHHTJ738YHJTEfnCiiXi6aX8Q6ePY7tnSMD6Q==}
+    peerDependencies:
+      '@sveltejs/kit': ^2.0.0
+    dependencies:
+      '@sveltejs/kit': 2.7.0(@sveltejs/vite-plugin-svelte@3.1.2)(svelte@4.2.19)(vite@5.4.8)
     dev: true
 
   /@sveltejs/kit@2.7.0(@sveltejs/vite-plugin-svelte@3.1.2)(svelte@4.2.19)(vite@5.4.8):
@@ -1368,6 +1355,7 @@ packages:
 
   /esm-env@1.0.0:
     resolution: {integrity: sha512-Cf6VksWPsTuW01vU9Mk/3vRue91Zevka5SjyNf3nEpokFRuqt/KjUQoGAwq9qMmhpLTHmXzSIrFRw8zxWzmFBA==}
+    dev: true
 
   /espree@9.6.1:
     resolution: {integrity: sha512-oruZaFkjorTpF32kDSI5/75ViwGeZginGGy2NoOSg3Q9bnwlnmDm4HLnkl0RE3n+njDXR037aY1+x58Z/zFdwQ==}
@@ -1583,11 +1571,6 @@ packages:
     dependencies:
       function-bind: 1.1.2
     dev: true
-
-  /highlight.js@11.9.0:
-    resolution: {integrity: sha512-fJ7cW7fQGCYAkgv4CPfwFHrfd/cLS4Hau96JuJ+ZTOWhjnhoeN1ub1tFmALm/+lW5z4WCAuAV9bm05AP0mS6Gw==}
-    engines: {node: '>=12.0.0'}
-    dev: false
 
   /ignore@5.3.2:
     resolution: {integrity: sha512-hsBTNUqQTDwkWtcdYI2i06Y/nUBEsNEDJKjWdigLvegy8kDuJAS8uRlpkkcQpyEXL0Z/pjDy5HBmMjRCJ2gq+g==}
