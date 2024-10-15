@@ -48,7 +48,7 @@
 	<!-- Native Table Element -->
 	<table class="table table-hover">
 		<tbody>
-			{#each Object.keys(sortedTable) as time, i}
+			{#each Object.keys(sortedTable) as time}
 				<tr>
 					<td
 						class="border-r border-gray-600 pr-4 cursor-pointer table-cell-fit"

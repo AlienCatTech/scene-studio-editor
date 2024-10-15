@@ -2,7 +2,7 @@
 	import { onMount, type SvelteComponent } from 'svelte';
 
 	// Stores
-	import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
+	import { getModalStore } from '@skeletonlabs/skeleton';
 	import { preset } from '$lib/store';
 	import {
 		addToDict,
@@ -25,7 +25,6 @@
 		min: 0,
 		sec: 0
 	};
-	const toastStore = getToastStore();
 	let visible = false;
 	let errMsg = '';
 	let meta = '';
@@ -52,7 +51,7 @@
 			return;
 		}
 		const timeStr = numToString(formData.hour, formData.min, formData.sec);
-		if (!meta && timeStr in $modalStore) {
+		if (timeStr in $preset) {
 			errMsg = 'Time already exist';
 			visible = true;
 			return;

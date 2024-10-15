@@ -1,10 +1,6 @@
-import { TextBox } from '@flexilte/skeleton';
 import type { LoginStore, SceneStudioSchema } from './types';
 import { loginStore } from './store';
 
-export const components = {
-	TextBox
-};
 export const sortPreset = (p: SceneStudioSchema): SceneStudioSchema => {
 	const sortedKeys = Object.keys(p).sort();
 	const sortedObj: SceneStudioSchema = {} as SceneStudioSchema;
@@ -53,14 +49,14 @@ export const numToString = (hour: number, min: number, sec: number) => {
 	return `${formattedHour}:${formattedMin}:${formattedSec}`;
 };
 
-export const addToDict = (key: string, p: Record<string, any>) => {
+export const addToDict = (key: string, p: Record<string, unknown>) => {
 	if (key in p) {
 		return p;
 	}
 	return {
 		...p,
 		...{
-			[key]: {}
+			[key]: []
 		}
 	};
 };
@@ -68,18 +64,20 @@ export const addToDict = (key: string, p: Record<string, any>) => {
 export const changeItemInDict = (
 	oldKey: string,
 	newKey: string,
-	p: Record<string, any>
-): Record<string, any> => {
+	p: Record<string, unknown>
+): Record<string, unknown> => {
 	if (oldKey in p) {
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		const { [oldKey]: _, ...rest } = p;
 		return { ...rest, [newKey]: p[oldKey] };
 	}
 	return p;
 };
 
-export const removeItemFromDict = (time: string, p: Record<string, any>) => {
+export const removeItemFromDict = (time: string, p: Record<string, unknown>) => {
 	if (time in p) {
 		const removeKey = <T extends object, K extends keyof T>(obj: T, key: K): Omit<T, K> => {
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			const { [key]: _, ...rest } = obj;
 			return rest;
 		};
@@ -96,3 +94,28 @@ export const setLogin = (login: LoginStore) => {
 
 export const getFullFileName = (name: string) => name + '.json';
 export const getOnlyFileName = (name: string) => name.substring(0, name.length - 5);
+
+export const changeItemInArray = <T>(array: T[], index: number, newItem: T): T[] => {
+	const newArray = [...array];
+	newArray[index] = newItem;
+	return newArray;
+};
+export const removeItemFromArray = <T>(array: T[], index: number): T[] => {
+	return [...array.slice(0, index), ...array.slice(index + 1)];
+};
+
+export function convertToOutputObject<T extends Record<string, unknown>>(
+	inputArray: T[]
+): { [K in keyof T]: T[K] } {
+	const outputObject: { [K in keyof T]: T[K] } = {} as { [K in keyof T]: T[K] };
+
+	for (const obj of inputArray) {
+		for (const key in obj) {
+			if (Object.hasOwn(obj, key)) {
+				outputObject[key] = obj[key];
+			}
+		}
+	}
+
+	return outputObject;
+}

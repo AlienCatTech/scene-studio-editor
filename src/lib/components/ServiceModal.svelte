@@ -11,24 +11,37 @@
 	/** Exposes parent props to this component. */
 	export let parent: SvelteComponent;
 	import { popup } from '@skeletonlabs/skeleton';
-	import { removeItemFromDict } from '$lib/common';
+	import { changeItemInArray, convertToOutputObject } from '$lib/common';
+	import type { ServiceSlot } from '$lib/types';
 	const modalStore = getModalStore();
 
-	// Form Data
-	const formData = {
-		service: '',
-		data: {},
-		target: { entity_id: '' }
+	type MetaProp = {
+		i?: number;
+		time: string;
+		serviceSlot?: ServiceSlot;
 	};
+
+	type HAService = {
+		domain: string;
+		services: {
+			[x: string]: {
+				fields: {
+					[x: string]: {
+						example: string;
+						required: boolean;
+					};
+				};
+			};
+		};
+	};
+
 	let visible = false;
 	let errMsg = '';
-	let meta: {
-		service?: string;
-		time?: string;
-	} = {};
+	let meta: MetaProp = { time: '' };
 
-	let serviceData: { domain: string; services: Record<string, Record<string, unknown>> }[] = [];
-	let dataPlaceholder: unknown;
+	let serviceData: HAService[] = [];
+	let dataPlaceholder = '';
+	let dataRequiredFields: string[] = [];
 
 	let serviceInput = '';
 	let dataInput = '';
@@ -40,20 +53,18 @@
 	onMount(async () => {
 		if ($modalStore && $modalStore[0] && $modalStore[0].meta) {
 			meta = $modalStore[0].meta;
-			if (meta.service) {
-				serviceInput = meta.service;
-				dataInput = JSON.stringify($preset[meta.time!][serviceInput].data);
-				entityInput = $preset[meta.time!][serviceInput].target?.entity_id || '';
-				formData.service = serviceInput;
-				formData.data = dataInput;
-				formData.target.entity_id = entityInput;
+			if (meta.serviceSlot) {
+				serviceInput = meta.serviceSlot.service;
+				dataInput = meta.serviceSlot.data ? JSON.stringify(meta.serviceSlot.data, null, 2) : '';
+				entityInput = meta.serviceSlot.target?.entity_id || '';
+				setupEntityFilter();
 			}
 		}
 
 		if ($loginStore) {
 			serviceData = await listServices();
 			services = serviceData
-				.map((domain: { services: {}; domain: any }) => {
+				.map((domain: { services: object; domain: string }) => {
 					return Object.keys(domain.services).map((s) => {
 						return { value: `${domain.domain}.${s}`, label: `${domain.domain}.${s}` };
 					});
@@ -67,63 +78,93 @@
 		}
 	});
 	let servicePopupSettings: PopupSettings = {
-		event: 'click',
+		event: 'focus-click',
 		target: 'serviceAutocomplete',
 		placement: 'bottom'
 	};
 	let entityPopupSettings: PopupSettings = {
-		event: 'click',
+		event: 'focus-click',
 		target: 'entityAutocomplete',
 		placement: 'bottom'
 	};
-	const onServiceSelect = (x: { detail: { value: string } }) => {
-		serviceInput = x.detail.value;
-		formData.service = x.detail.value;
+	const setupEntityFilter = () => {
 		const parts = serviceInput.split('.');
 		const domain = serviceData.find((x) => x.domain == parts[0]);
 		if (domain) {
-			dataPlaceholder = domain.services[parts[1]]['fields'];
+			const fields = domain.services[parts[1]]['fields'];
+			const keys = Object.keys(domain.services[parts[1]]['fields']);
+			dataPlaceholder = JSON.stringify(
+				convertToOutputObject(
+					keys.map((field) => ({
+						[field]: fields[field]['example']
+					}))
+				),
+				null,
+				2
+			);
+			dataRequiredFields = keys
+				.map((field) => {
+					if (fields[field].required) return field;
+				})
+				.filter((x) => x !== undefined);
 		}
+	};
+	const onServiceSelect = (x: { detail: { value: string } }) => {
+		serviceInput = x.detail.value;
+		setupEntityFilter();
 	};
 	const onEntitySelect = (x: { detail: { value: string } }) => {
 		entityInput = x.detail.value;
-		formData.target.entity_id = x.detail.value;
 	};
 	// We've created a custom submit function to pass the response and close the modal.
 	function onFormSubmit(): void {
 		// Input validation
-		if (!formData.service) {
+		if (!serviceInput) {
 			errMsg = 'Invalid Input: no service';
+			visible = true;
+			return;
+		}
+		if (!serviceInput.includes('.')) {
+			errMsg = 'Invalid Input: invalid service';
 			visible = true;
 			return;
 		}
 		try {
 			if (dataInput) {
-				JSON.parse(dataInput);
+				const j = JSON.parse(dataInput);
+				dataRequiredFields.forEach((f) => {
+					if (!(f in j)) {
+						errMsg = `Invalid Input: ${f} is required`;
+						visible = true;
+						return;
+					}
+				});
 			}
 		} catch (e) {
-			errMsg = 'Invalid Input' + e;
+			errMsg = 'Invalid Input: ' + e;
 			visible = true;
 			return;
 		}
 
-		if (meta.service && formData.service !== meta.service) {
+		const body = {
+			service: serviceInput,
+			data: dataInput ? JSON.parse(dataInput) : dataInput,
+			target: {
+				entity_id: entityInput
+			}
+		};
+		if (meta.i != undefined) {
 			preset.update((p) => {
-				p[meta.time!] = removeItemFromDict(meta.service!, p[meta.time!]);
+				p[meta.time] = changeItemInArray(p[meta.time], meta.i!, body);
+				console.log(2, p);
 				return p;
 			});
+			modalStore.close();
+			return;
 		}
 
 		preset.update((p) => {
-			p[meta.time!] = {
-				...p[meta.time!],
-				...{
-					[formData.service]: {
-						data: dataInput ? JSON.parse(dataInput) : undefined,
-						target: formData.target
-					}
-				}
-			};
+			p[meta.time] = [...p[meta.time], body];
 			return p;
 		});
 		modalStore.close();
@@ -132,7 +173,7 @@
 		// Create a local copy of options
 		let _options = [...entities];
 		// Filter options
-		return _options.filter((x) => x.value.startsWith(formData.service.split('.')[0]));
+		return _options.filter((x) => x.value.startsWith(serviceInput.split('.')[0]));
 	}
 	// Base Classes
 	const cBase = 'card p-4 w-modal shadow-xl space-y-4';
@@ -145,7 +186,7 @@
 {#if $modalStore[0]}
 	<div class="modal-example-form {cBase}">
 		<header class={cHeader}>
-			{meta.service ? 'Change Service' : 'Add A Service'}
+			{meta.i ? 'Change Service' : 'Add A Service'}
 		</header>
 		<article>Add a service to a scene.</article>
 		<!-- Enable for debugging: -->
@@ -174,11 +215,17 @@
 			</label>
 			<label class="label">
 				<span>Data</span>
-				<textarea
-					class="textarea"
-					bind:value={dataInput}
-					placeholder={JSON.stringify(dataPlaceholder)}
-				/>
+				{#if dataPlaceholder}
+					<div class="  text-gray-500 text-sm">
+						<button class="underline" on:click={() => (dataInput = dataPlaceholder)}
+							>Use Example</button
+						>
+						{#if dataRequiredFields.length > 0}
+							<span>Required fields: {dataRequiredFields.join(', ')}</span>
+						{/if}
+					</div>
+				{/if}
+				<textarea class="textarea" bind:value={dataInput} placeholder={dataPlaceholder} rows="5" />
 				<span class="text-gray-400"
 					>You can also use <a
 						class="underline"

@@ -1,28 +1,28 @@
 <script lang="ts">
-	import { removeItemFromDict } from '$lib/common';
+	import { removeItemFromArray } from '$lib/common';
 	import { preset } from '$lib/store';
-	import type { TimePattern } from '$lib/types';
+	import type { ServiceSlot } from '$lib/types';
 	import TargetTable from './TargetTable.svelte';
 	import Icon from '@iconify/svelte';
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import type { ModalSettings } from '@skeletonlabs/skeleton';
 	const modalStore = getModalStore();
 
-	export let services: TimePattern;
+	export let services: ServiceSlot[];
 	export let time: string;
 
-	const handleEdit = (time: string, s: string) => {
+	const handleEdit = (time: string, i: number, serviceSlot: ServiceSlot) => {
 		const serviceModal: ModalSettings = {
 			type: 'component',
 			component: 'serviceModal',
-			meta: { time, service: s }
+			meta: { time, i, serviceSlot }
 		};
 		modalStore.trigger(serviceModal);
 	};
 
-	function handleRemove(time: string, s: string) {
+	function handleRemove(time: string, i: number) {
 		preset.update((p) => {
-			p[time] = removeItemFromDict(s, p[time]);
+			p[time] = removeItemFromArray(p[time], i);
 			return p;
 		});
 	}
@@ -32,27 +32,28 @@
 	<!-- Native Table Element -->
 	<table class="table table-hover dark:hover:bg-gray-700 hover:bg-gray-300">
 		<tbody>
-			{#each Object.keys(services) as s, i}
+			{#each services as s, i}
 				<tr>
-					<td class="border-r border-gray-600 pr-4 table-cell-fit">{s}</td>
+					<td class="border-r border-gray-600 pr-4 table-cell-fit">{s.service}</td>
 					<td>
-						{services[s].data ? JSON.stringify(services[s].data, null, 2) : ''}
+						{s.data ? JSON.stringify(s.data, null, 2) : ''}
 					</td>
 					<td class="table-cell-fit">
-						<TargetTable targets={services[s].target}></TargetTable>
+						<TargetTable targets={s.target}></TargetTable>
 					</td>
 					<td class="table-cell-fit">
 						<div class="flex flex-row gap-2 justify-end">
 							<button
 								type="button"
 								class="btn-icon variant-filled-tertiary"
-								on:click={() => handleEdit(time, s)}><Icon icon="ic:baseline-edit"></Icon></button
+								on:click={() => handleEdit(time, i, s)}
+								><Icon icon="ic:baseline-edit"></Icon></button
 							>
 
 							<button
 								type="button"
 								class="btn-icon variant-filled-error"
-								on:click={() => handleRemove(time, s)}
+								on:click={() => handleRemove(time, i)}
 								><Icon icon="ic:baseline-delete"></Icon></button
 							>
 						</div>

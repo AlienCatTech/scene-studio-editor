@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { getFullFileName, getOnlyFileName } from '$lib/common';
 	import TimeTable from '$lib/components/TimeTable.svelte';
+	import examplePreset from '$lib/examplePreset';
 	import { getMedia, uploadMedia } from '$lib/ha';
 	import { fileName, loginStore, preset } from '$lib/store';
 
@@ -19,7 +20,6 @@
 		modalStore.trigger(loginModal);
 	};
 
-	let _fileName = '';
 	let fileInput: FileList;
 
 	const toastMsg = (message: string, isErr: boolean = false) => {
@@ -55,7 +55,7 @@
 			const file = new File([blob], getFullFileName($fileName), { type: 'application/json' });
 
 			await uploadMedia(file);
-			toastMsg('Successfully saved to your media');
+			toastMsg('Successfully saved to your media! Remember to select it in home assistant');
 		} catch (e) {
 			toastMsg('Failed to save: ' + e, true);
 		}
@@ -83,7 +83,7 @@
 	};
 
 	const handleExport = async () => {
-		if (!fileName) {
+		if (!$fileName) {
 			toastMsg('Give file a name!');
 			return;
 		}
@@ -119,37 +119,42 @@
 		<div class="md:flex gap-2">
 			{#if $loginStore}
 				<button type="button" class="btn variant-filled-success w-fit" on:click={handleLogin}>
-					Logged in to HuffOS
+					Connected
 				</button>
-				<button type="button" class="btn variant-ghost-primary w-fit" on:click={handleLoad}>
+				<button type="button" class="btn variant-ghost-secondary w-fit" on:click={handleLoad}>
 					Load
 				</button>
 				<button type="button" class="btn variant-ghost-secondary w-fit" on:click={handleSave}>
 					Save
 				</button>
 			{:else}
-				<button type="button" class="btn variant-filled w-fit" on:click={handleLogin}>
+				<button type="button" class="btn variant-filled-primary w-fit" on:click={handleLogin}>
 					Login to HuffOS
 				</button>
 			{/if}
-			<button
-				type="button"
-				class="btn variant-filled-warning w-fit"
-				on:click={() => preset.set({})}
-			>
-				Clear
-			</button>
-			<FileButton
-				name="files"
-				accept="application/json"
-				button="btn variant-filled-primary"
-				bind:files={fileInput}
-				on:change={handleImport}
-			/>
-			<button type="button" class="btn variant-filled-secondary w-fit" on:click={handleExport}>
-				Download
-			</button>
 		</div>
+	</div>
+	<div class="md:flex justify-end gap-2">
+		<button
+			type="button"
+			class="btn variant-filled w-fit"
+			on:click={() => preset.set(examplePreset)}
+		>
+			Load Example
+		</button>
+		<button type="button" class="btn variant-filled-warning w-fit" on:click={() => preset.set({})}>
+			Clear
+		</button>
+		<FileButton
+			name="files"
+			accept="application/json"
+			button="btn variant-filled-secondary"
+			bind:files={fileInput}
+			on:change={handleImport}
+		/>
+		<button type="button" class="btn variant-filled-secondary w-fit" on:click={handleExport}>
+			Download
+		</button>
 	</div>
 	<div class="flex justify-center">
 		<TimeTable />

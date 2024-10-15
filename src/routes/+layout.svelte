@@ -1,6 +1,6 @@
 <script lang="ts">
 	import '../app.postcss';
-	import { AppShell, AppBar, autoModeWatcher, LightSwitch } from '@skeletonlabs/skeleton';
+	import { AppShell, AppBar, LightSwitch } from '@skeletonlabs/skeleton';
 
 	import { initializeStores, Modal, Toast, getToastStore } from '@skeletonlabs/skeleton';
 	import type { ModalComponent, ToastSettings } from '@skeletonlabs/skeleton';
