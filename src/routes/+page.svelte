@@ -2,7 +2,7 @@
 	import { getFullFileName, getOnlyFileName } from '$lib/common';
 	import TimeTable from '$lib/components/TimeTable.svelte';
 	import { getMedia, uploadMedia } from '$lib/ha';
-	import { loginStore, preset } from '$lib/store';
+	import { fileName, loginStore, preset } from '$lib/store';
 
 	import { getModalStore, getToastStore, FileButton } from '@skeletonlabs/skeleton';
 	import type { ModalSettings, ToastSettings } from '@skeletonlabs/skeleton';
@@ -19,7 +19,7 @@
 		modalStore.trigger(loginModal);
 	};
 
-	let fileName = '';
+	let _fileName = '';
 	let fileInput: FileList;
 
 	const toastMsg = (message: string, isErr: boolean = false) => {
@@ -37,10 +37,8 @@
 
 	const handleLoad = async () => {
 		try {
-			const media = await getMedia(getFullFileName(fileName));
+			const media = await getMedia(getFullFileName($fileName));
 			preset.set(media);
-			localStorage.setItem('preset', media);
-			localStorage.setItem('fileName', fileName);
 		} catch (e) {
 			toastMsg('Failed to load: ' + e, true);
 		}
@@ -48,13 +46,13 @@
 
 	const handleSave = async () => {
 		try {
-			if (!fileName) {
+			if (!$fileName) {
 				toastMsg('Give file a name!');
 				return;
 			}
 
 			const blob = new Blob([JSON.stringify($preset)], { type: 'application/json' });
-			const file = new File([blob], getFullFileName(fileName), { type: 'application/json' });
+			const file = new File([blob], getFullFileName($fileName), { type: 'application/json' });
 
 			await uploadMedia(file);
 			toastMsg('Successfully saved to your media');
@@ -63,8 +61,8 @@
 		}
 	};
 
-	const handleImport = async (e) => {
-		const file = e.target.files[0];
+	const handleImport = async () => {
+		const file = fileInput.item(0);
 		if (!file) {
 			return;
 		}
@@ -74,9 +72,7 @@
 				if (e.target && e.target.result) {
 					preset.set(JSON.parse(e.target.result as string));
 					const name = getOnlyFileName(file.name);
-					localStorage.setItem('preset', e.target.result as string);
-					localStorage.setItem('fileName', name);
-					fileName = name;
+					fileName.set(name);
 				}
 			} catch (e) {
 				toastMsg('Failed to import: ' + e, true);
@@ -95,7 +91,7 @@
 		const url = URL.createObjectURL(blob);
 		const link = document.createElement('a');
 		link.href = url;
-		link.download = getFullFileName(fileName);
+		link.download = getFullFileName($fileName);
 
 		document.body.appendChild(link);
 		link.click();
@@ -106,7 +102,9 @@
 
 	onMount(() => {
 		if (localStorage.getItem('preset')) preset.set(JSON.parse(localStorage.getItem('preset')!));
-		if (localStorage.getItem('fileName')) fileName = localStorage.getItem('fileName')!;
+		if (localStorage.getItem('fileName')) fileName.set(localStorage.getItem('fileName')!);
+		preset.subscribe((x) => localStorage.setItem('preset', JSON.stringify(x)));
+		fileName.subscribe((x) => localStorage.setItem('fileName', x));
 	});
 </script>
 
@@ -115,7 +113,7 @@
 		<div class="w-fit">
 			<label class="flex">
 				<span class=" flex items-center w-full">File Name</span>
-				<input class="input" type="text" bind:value={fileName} placeholder="myScene" />
+				<input class="input" type="text" bind:value={$fileName} placeholder="myScene" />
 			</label>
 		</div>
 		<div class="md:flex gap-2">

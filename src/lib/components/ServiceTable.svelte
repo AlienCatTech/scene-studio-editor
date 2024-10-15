@@ -30,7 +30,7 @@
 
 <div class="table-container">
 	<!-- Native Table Element -->
-	<table class="table table-hover hover:bg-gray-700">
+	<table class="table table-hover dark:hover:bg-gray-700 hover:bg-gray-300">
 		<tbody>
 			{#each Object.keys(services) as s, i}
 				<tr>

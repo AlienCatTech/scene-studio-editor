@@ -68,13 +68,16 @@
 									on:click={() => handleNewService(time)}
 									><Icon icon="ic:baseline-plus"></Icon></button
 								>
-								<button
-									type="button"
-									class="btn-icon variant-filled-error"
-									on:click={() => handleRemove(time)}
-									><Icon icon="ic:baseline-delete"></Icon></button
-								>
 							</div>
+						</div>
+					</td>
+					<td>
+						<div class="my-12 flex justify-end">
+							<button
+								type="button"
+								class="btn-icon variant-filled-error"
+								on:click={() => handleRemove(time)}><Icon icon="ic:baseline-delete"></Icon></button
+							>
 						</div>
 					</td>
 				</tr>

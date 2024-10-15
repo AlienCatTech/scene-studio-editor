@@ -1,6 +1,6 @@
 <script lang="ts">
 	import '../app.postcss';
-	import { AppShell, AppBar } from '@skeletonlabs/skeleton';
+	import { AppShell, AppBar, autoModeWatcher, LightSwitch } from '@skeletonlabs/skeleton';
 
 	import { initializeStores, Modal, Toast, getToastStore } from '@skeletonlabs/skeleton';
 	import type { ModalComponent, ToastSettings } from '@skeletonlabs/skeleton';
@@ -51,7 +51,9 @@
 			<svelte:fragment slot="lead">
 				<strong class="text-xl uppercase">Scene Studio Editor</strong>
 			</svelte:fragment>
+
 			<svelte:fragment slot="trail">
+				<LightSwitch />
 				<a
 					class="btn btn-sm variant-ghost-surface"
 					href="https://huffbox.aliencat.dev"

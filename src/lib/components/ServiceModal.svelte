@@ -11,6 +11,7 @@
 	/** Exposes parent props to this component. */
 	export let parent: SvelteComponent;
 	import { popup } from '@skeletonlabs/skeleton';
+	import { removeItemFromDict } from '$lib/common';
 	const modalStore = getModalStore();
 
 	// Form Data
@@ -26,6 +27,9 @@
 		time?: string;
 	} = {};
 
+	let serviceData: { domain: string; services: Record<string, Record<string, unknown>> }[] = [];
+	let dataPlaceholder: unknown;
+
 	let serviceInput = '';
 	let dataInput = '';
 	let entityInput = '';
@@ -40,12 +44,15 @@
 				serviceInput = meta.service;
 				dataInput = JSON.stringify($preset[meta.time!][serviceInput].data);
 				entityInput = $preset[meta.time!][serviceInput].target?.entity_id || '';
+				formData.service = serviceInput;
+				formData.data = dataInput;
+				formData.target.entity_id = entityInput;
 			}
 		}
 
 		if ($loginStore) {
-			const serviceRes = await listServices();
-			services = serviceRes
+			serviceData = await listServices();
+			services = serviceData
 				.map((domain: { services: {}; domain: any }) => {
 					return Object.keys(domain.services).map((s) => {
 						return { value: `${domain.domain}.${s}`, label: `${domain.domain}.${s}` };
@@ -72,6 +79,11 @@
 	const onServiceSelect = (x: { detail: { value: string } }) => {
 		serviceInput = x.detail.value;
 		formData.service = x.detail.value;
+		const parts = serviceInput.split('.');
+		const domain = serviceData.find((x) => x.domain == parts[0]);
+		if (domain) {
+			dataPlaceholder = domain.services[parts[1]]['fields'];
+		}
 	};
 	const onEntitySelect = (x: { detail: { value: string } }) => {
 		entityInput = x.detail.value;
@@ -81,7 +93,7 @@
 	function onFormSubmit(): void {
 		// Input validation
 		if (!formData.service) {
-			errMsg = 'Invalid Input';
+			errMsg = 'Invalid Input: no service';
 			visible = true;
 			return;
 		}
@@ -95,10 +107,11 @@
 			return;
 		}
 
-		if (!meta.service && formData.service in $preset[meta.time!]) {
-			errMsg = 'Service already exist';
-			visible = true;
-			return;
+		if (meta.service && formData.service !== meta.service) {
+			preset.update((p) => {
+				p[meta.time!] = removeItemFromDict(meta.service!, p[meta.time!]);
+				return p;
+			});
 		}
 
 		preset.update((p) => {
@@ -161,11 +174,10 @@
 			</label>
 			<label class="label">
 				<span>Data</span>
-				<input
-					class="input"
-					type="text"
+				<textarea
+					class="textarea"
 					bind:value={dataInput}
-					placeholder={JSON.stringify({ value: 123 })}
+					placeholder={JSON.stringify(dataPlaceholder)}
 				/>
 				<span class="text-gray-400"
 					>You can also use <a
